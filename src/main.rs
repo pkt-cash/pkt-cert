@@ -124,7 +124,7 @@ async fn update_nginx_conf(config: &Config, domain: &str) -> Result<bool> {
     let content = [
         format!("ssl_certificate {};", config::cert_path(config, domain)),
         format!("ssl_certificate_key {};", config::key_path(config, domain)),
-        format!("server_name {};", server_name.join(", ")),
+        format!("server_name {};", server_name.join(" ")),
     ].join("\n") + "\n";
     if tokio::fs::try_exists(&path).await? {
         let existing = tokio::fs::read(&path).await?;
