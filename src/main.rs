@@ -102,6 +102,11 @@ async fn update_certs(
     for domain in need_update {
         println!("Checking domain {domain}");
         let good_tlds = precheck::precheck_domain(domain, &tlds, &cookie).await?;
+        if good_tlds.is_empty() {
+            println!("Domain {} does not appear to be valid, check DNS and server conf", domain);
+            continue;
+        }
+        println!("Domain {}.pkt accessible from {} TLDs", domain, good_tlds.len());
         acme::do_acme(&server, &dir, domain, &good_tlds).await?;
     }
 
@@ -121,12 +126,17 @@ async fn update_nginx_conf(config: &Config, domain: &str) -> Result<bool> {
         format!("ssl_certificate_key {};", config::key_path(config, domain)),
         format!("server_name {};", server_name.join(", ")),
     ].join("\n") + "\n";
-    let existing = tokio::fs::read(&path).await?;
-    if existing == content.as_bytes() {
-        // No change
-        return Ok(false);
+    if tokio::fs::try_exists(&path).await? {
+        let existing = tokio::fs::read(&path).await?;
+        if existing == content.as_bytes() {
+            // No change
+            return Ok(false);
+        } else {
+            println!("Nginx config {} has changed", path);
+        }
+    } else {
+        println!("Creating new nginx config {}", path);
     }
-    println!("Nginx config {} has changed", path);
     tokio::fs::write(&path, content).await.context("Writing nginx config")?;
     Ok(true)
 }

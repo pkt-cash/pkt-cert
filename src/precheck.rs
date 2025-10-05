@@ -138,10 +138,5 @@ pub async fn precheck_domain(domain: &str, all_tlds: &[String], cookie: &str) ->
             }
         }
     }
-    if valid.is_empty() {
-        println!("Domain {}.pkt not accessible from any TLD, check your DNS settings", domain);
-    } else {
-        println!("Domain {}.pkt accessible from {} TLDs", domain, valid.len());
-    }
     Ok(valid)
 }
